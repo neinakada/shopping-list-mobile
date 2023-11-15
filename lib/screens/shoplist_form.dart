@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+// TODO: Impor drawer yang sudah dibuat sebelumnya
 import 'package:shopping_list/widgets/left_drawer.dart';
+import 'package:shopping_list/screens/menu.dart';
+import 'dart:convert'; // Import for jsonEncode
+import 'package:provider/provider.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
 
 class ShopFormPage extends StatefulWidget {
   const ShopFormPage({super.key});
@@ -13,9 +18,10 @@ class _ShopFormPageState extends State<ShopFormPage> {
   String _name = "";
   int _price = 0;
   String _description = "";
-
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Center(
@@ -26,6 +32,7 @@ class _ShopFormPageState extends State<ShopFormPage> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
+      // TODO: Tambahkan drawer yang sudah dibuat di sini
       drawer: const LeftDrawer(),
       body: Form(
         key: _formKey,
@@ -34,29 +41,28 @@ class _ShopFormPageState extends State<ShopFormPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: TextFormField(
-                        decoration: InputDecoration(
-                          hintText: "Nama Produk",
-                          labelText: "Nama Produk",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                          ),
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        hintText: "Nama Produk",
+                        labelText: "Nama Produk",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(5.0),
                         ),
-                        onChanged: (String? value) {
-                          setState(() {
-                            _name = value!;
-                          });
-                        },
-                        validator: (String? value) {
-                          if (value == null || value.isEmpty) {
-                            return "Nama tidak boleh kosong!";
-                          }
-                          return null;
-                        },
                       ),
+                      onChanged: (String? value) {
+                        setState(() {
+                          _name = value!;
+                        });
+                      },
+                      validator: (String? value) {
+                        if (value == null || value.isEmpty) {
+                          return "Nama tidak boleh kosong!";
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextFormField(
@@ -67,10 +73,11 @@ class _ShopFormPageState extends State<ShopFormPage> {
                           borderRadius: BorderRadius.circular(5.0),
                         ),
                       ),
+                      // TODO: Tambahkan variabel yang sesuai
                       onChanged: (String? value) {
                         setState(() {
                           _price = int.parse(value!);
-                          });
+                        });
                       },
                       validator: (String? value) {
                         if (value == null || value.isEmpty) {
@@ -83,7 +90,6 @@ class _ShopFormPageState extends State<ShopFormPage> {
                       },
                     ),
                   ),
-
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextFormField(
@@ -96,6 +102,7 @@ class _ShopFormPageState extends State<ShopFormPage> {
                       ),
                       onChanged: (String? value) {
                         setState(() {
+                          // TODO: Tambahkan variabel yang sesuai
                           _description = value!;
                         });
                       },
@@ -107,7 +114,6 @@ class _ShopFormPageState extends State<ShopFormPage> {
                       },
                     ),
                   ),
-
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: Padding(
@@ -117,37 +123,34 @@ class _ShopFormPageState extends State<ShopFormPage> {
                           backgroundColor:
                           MaterialStateProperty.all(Colors.indigo),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text('Produk berhasil tersimpan'),
-                                  content: SingleChildScrollView(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Nama: $_name'),
-                                        Text('Harga: $_price'),
-                                        Text('Deskripsi: $_description')
-                                      ],
-                                    ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      child: const Text('OK'),
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
+                            // Kirim ke Django dan tunggu respons
+                            // TODO: Ganti URL dan jangan lupa tambahkan trailing slash (/) di akhir URL!
+                            final response = await request.postJson(
+                                "http://127.0.0.1:8000/create-flutter/",
+                                jsonEncode(<String, String>{
+                                  'name': _name,
+                                  'price': _price.toString(),
+                                  'description': _description,
+                                }));
+                            if (response['status'] == 'success') {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                content: Text("Produk baru berhasil disimpan!"),
+                              ));
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => MyHomePage()),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                content:
+                                Text("Terdapat kesalahan, silakan coba lagi."),
+                              ));
+                            }
                           }
-                          _formKey.currentState!.reset();
                         },
                         child: const Text(
                           "Save",
@@ -156,9 +159,10 @@ class _ShopFormPageState extends State<ShopFormPage> {
                       ),
                     ),
                   ),
-              ]),
-          ),
+                ]
+            )
+        ),
       ),
-    );;
+    );
   }
 }
